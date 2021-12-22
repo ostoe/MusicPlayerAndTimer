@@ -117,7 +117,9 @@ extension SAPlayer {
              */
             public static func subscribe(_ closure: @escaping (_ url: URL, _ playingStatus: SAPlayingStatus) -> ()) -> UInt {
                 return AudioClockDirector.shared.attachToChangesInPlayingStatus(closure: { (key, isPlaying) in
-                    guard let url = SAPlayer.shared.getUrl(forKey: key) else { return }
+                    guard let url = SAPlayer.shared.getUrl(forKey: key) else {
+                        print("url: return")
+                        return }
                     closure(url, isPlaying)
                 })
             }

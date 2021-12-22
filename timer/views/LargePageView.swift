@@ -13,27 +13,27 @@ struct LargePageView: View {
     var musicItem: MusicItemPlayerController
     @State var currentPage = 0
     var body: some View {
-        if musicItem.musicList.count == 0 {
+        if musicItem.musicList.list.count == 0 {
             Text(/*@START_MENU_TOKEN@*/"Placeholder"/*@END_MENU_TOKEN@*/)
         } else {
             ZStack(alignment: .bottomTrailing) {
 //                NavigationLink(destination: Text("TextLarger")) {
-                    PageViewController(pages: musicItem.musicList.filter({ music in
-                        music.artwork != nil
+                PageViewController(pages: musicItem.musicList.list.filter({ music in
+                        music.mediaInfo?.artwork != nil && music.mediaInfo != nil
                     }).shuffled().map({ music in
-                        FeatureCard(music: music)
+                        FeatureCard(music: music.mediaItem!)
                             
                     }) ,
                                        currentPage: $currentPage)
 //                }
                 
                 
-                PageControl(numberOfPage: musicItem.musicList.filter({ music in
-                    music.artwork != nil
+                PageControl(numberOfPage: musicItem.musicList.list.filter({ music in
+                    music.mediaInfo?.artwork != nil
                 }).count, currentPage: $currentPage)
                 
-                    .frame(width: CGFloat(musicItem.musicList.filter({ music in
-                        music.artwork != nil
+                    .frame(width: CGFloat(musicItem.musicList.list.filter({ music in
+                        music.mediaInfo?.artwork != nil
                     }).count * 18))
                     .padding(.trailing)
             }

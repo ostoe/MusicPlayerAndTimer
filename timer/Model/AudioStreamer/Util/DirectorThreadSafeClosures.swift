@@ -52,6 +52,7 @@ class DirectorThreadSafeClosures<P>  {
                 do {
                     try element.value(key, payload)
                 } catch {
+                    print("broadcast need remove key")
                     helperRemove(withKey: element.key)
                 }
             }
@@ -64,6 +65,7 @@ class DirectorThreadSafeClosures<P>  {
         
         //The director may not yet have the status yet. We should only call the closure if we have it
         //Let the caller know the immediate value. If it's dead already then stop
+        // 第一次执行cache为空
         for (key, val) in cache {
             do {
                 try closure(key, val)
@@ -87,6 +89,10 @@ class DirectorThreadSafeClosures<P>  {
             self.closures.removeAll()
             self.cache.removeAll()
         }
+    }
+    
+    func clearAllCache() {
+        self.cache.removeAll()
     }
     
     private func helperRemove(withKey key: UInt) {

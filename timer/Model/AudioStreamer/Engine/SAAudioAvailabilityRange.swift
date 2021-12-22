@@ -34,7 +34,14 @@ public struct SAAudioAvailabilityRange {
     
     public var bufferingProgress: Double {
         get {
-            return (startingNeedle + durationLoadedByNetwork) / predictedDurationToLoad
+            
+            let x = (startingNeedle + durationLoadedByNetwork) / predictedDurationToLoad
+            if x.isNaN {
+                return 0
+            }else if x > 1 && x < 0 {
+                return 0
+            }
+            return x
         }
     }
     

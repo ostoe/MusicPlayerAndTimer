@@ -25,7 +25,7 @@
 
 import Foundation
 import UIKit
-
+import MediaPlayer
 /**
  UTC corresponds to epoch time (number of seconds that have elapsed since January 1, 1970, midnight UTC/GMT). https://www.epochconverter.com/ is a useful site to convert to human readable format.
  */
@@ -37,13 +37,15 @@ public typealias UTC = Int
 public struct SALockScreenInfo {
     var title: String
     var artist: String
-    var artwork: UIImage?
+    var artwork: MPMediaItemArtwork?
+    var albumTitle: String
     var releaseDate: UTC
     
-    public init(title: String, artist: String, artwork: UIImage?, releaseDate: UTC) {
+    public init(title: String, artist: String, artwork: MPMediaItemArtwork?, releaseDate: UTC, albumTitle: String) {
         self.title = title
         self.artist = artist
         self.artwork = artwork
         self.releaseDate = releaseDate
+        self.albumTitle = albumTitle
     }
 }

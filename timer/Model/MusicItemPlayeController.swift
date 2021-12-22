@@ -9,25 +9,67 @@ import Foundation
 import AVFoundation
 import MediaPlayer
 
+struct QueueItem {
+    var loc: Location
+    var url: URL
+    var mediaInfo: SALockScreenInfo?
+    var bitrate: SAPlayerBitrate
+    var mediaItem: MPMediaItem?
+    var downloadState: DownState?
+
+    init(loc: Location, url: URL, mediaInfo: SALockScreenInfo?, bitrate: SAPlayerBitrate = .high, mediaItem: MPMediaItem?) {
+        self.loc = loc
+        self.url = url
+        self.mediaInfo = mediaInfo
+        self.bitrate = bitrate
+        self.mediaItem = mediaItem
+    }
+}
+
+enum Location {
+    case remote
+    case disk
+    case cache
+}
+
+enum DownState {
+    case downloading
+    case queue
+    case buffering
+}
+
+class QueueItemList:  ObservableObject{
+    var list : [QueueItem] = []
+}
 
 class MusicItemPlayerController: NSObject, ObservableObject {
+
     
-    @Published var currentPlay: MPMediaItem? = nil
-    @Published var musicList: [MPMediaItem] = []
+    struct QueueItemCollection {
+        var items: [QueueItem]
+    }
+
+    @Published var currentPlay: QueueItem? = nil
+    @Published var musicList = QueueItemList()
+    @Published var downloadList = QueueItemList()
     @Published var currentIndex: Int = -1
+    var musicListCollections : [QueueItemList] = []
     
+    public static var shared = MusicItemPlayerController()
+    var downloadIndexMap = [String: Int]()
     private var isPrepareToNextItem: Bool = false
     private var nextItemIndex: Int = 0
-    var isRandom = true
+    var isRandom = false
+    var collectionIndex = 0
     var url: URL? {
         if currentPlay != nil {
-            guard let u = currentPlay?.assetURL else { return nil }
+            guard let u = currentPlay?.url else { return nil }
             return u
         } else {
-            if musicList.count > 0 {
-                currentIndex = isRandom ? Int(arc4random_uniform(UInt32(musicList.count))) : 0
-                currentPlay = musicList[currentIndex]
-                guard let u = currentPlay?.assetURL else { return nil }
+            if musicList.list.count > 0 {
+                currentIndex = isRandom ? Int(arc4random_uniform(UInt32(musicList.list.count))) : 0
+                currentPlay = musicList.list[currentIndex]
+                guard let u = currentPlay?.url else { return nil }
                 return u
             } else {
                 return nil
@@ -36,50 +78,84 @@ class MusicItemPlayerController: NSObject, ObservableObject {
     }
     override init() {
         super.init()
-        self.musicList = getLocalMusicList()
+        getLocalMusicList()
         let _ = url
+        self.musicListCollections.append(self.musicList)
+        self.musicListCollections.append(self.downloadList)
+//        self.musicListCollections.append( &self.musicList )
     }
+
     
-    func prepareToNextItem(_ index: Int) {
+    func prepareToNextItem(_ index: Int, collectionIndex: Int = 0) {
+        self.collectionIndex = collectionIndex
         nextItemIndex = index
         isPrepareToNextItem = true
     }
+    
+    
     
     func getUrlStreamAudioFile() -> URL? {
 //        URLSession(configuration: )
         return nil
     }
     
-    func nextItem() -> URL? {
+    func nextItem() -> QueueItem? {
         if isPrepareToNextItem {
             isPrepareToNextItem = false
             currentIndex = nextItemIndex
         } else {
-            currentIndex = isRandom ? Int(arc4random_uniform(UInt32(musicList.count))) : currentIndex + 1
-            if currentIndex >= musicList.count {
+            currentIndex = isRandom ? Int(arc4random_uniform(UInt32(self.musicListCollections[self.collectionIndex].list.count))) : currentIndex + 1
+            if currentIndex >= self.musicListCollections[self.collectionIndex].list.count {
                 currentIndex = 0
             }
         }
-        currentPlay = musicList[currentIndex]
-        guard let u = currentPlay?.assetURL else { return nil }
-        return u
+//        print("\(self.collectionIndex):\(currentIndex)")
+        currentPlay = self.musicListCollections[self.collectionIndex].list[currentIndex]
+        guard let _ = currentPlay?.url else { return nil }
+        return currentPlay
     }
     
     
-    func previousItem() -> URL? {
-        currentIndex = isRandom ? Int(arc4random_uniform(UInt32(musicList.count))) : currentIndex - 1
+    func previousItem() -> QueueItem? {
+        currentIndex = isRandom ? Int(arc4random_uniform(UInt32(musicList.list.count))) : currentIndex - 1
         if currentIndex < 0 {
-            currentIndex = musicList.count - 1
+            currentIndex = musicList.list.count - 1
         }
-        currentPlay = musicList[currentIndex]
-        guard let u = currentPlay?.assetURL else { return nil }
-        return u
+        currentPlay = musicList.list[currentIndex]
+        guard let _ = currentPlay?.url else { return nil }
+        return currentPlay
     }
     
+    
+    func insertOrUpdateDownloadList(url: URL, songTitle: String, downState: DownState, songState: Location = .cache) -> Int? {
+        if let hasIndex = downloadIndexMap[url.absoluteString] {
+            // from play to download
+            var item = downloadList.list[hasIndex]
+            if downState == .downloading {
+                item.downloadState = downState
+                self.downloadList.list[hasIndex] = item
+            } else {
+                
+            }
+            return hasIndex
+            
+        } else {
+            let mediaInfo = SALockScreenInfo(title: songTitle, artist: url.absoluteString, artwork: nil, releaseDate: 0, albumTitle: "")
+            var cacheItem = QueueItem(loc: songState, url: url, mediaInfo: mediaInfo, mediaItem: nil)
+            cacheItem.downloadState = downState
+            self.downloadIndexMap[url.absoluteString] = downloadList.list.count
+            self.downloadList.list.append(cacheItem)
+            return downloadList.list.count - 1
+        }
+        return nil
+        
+    }
     
     private func loadLocalStorage() {}
     
-    private func getLocalMusicList() -> [MPMediaItem]{
+    
+    
+    private func getLocalMusicList(){
         //        var mediaItem: [MPMediaItem] = []
         //
         //        MPMusicPlayerController.applicationMusicPlayer
@@ -111,9 +187,30 @@ class MusicItemPlayerController: NSObject, ObservableObject {
         //        }
         // placeholder
         guard  let songsList = MPMediaQuery.songs().items  else {
-            return []
+            return
         }
-        return songsList
+        var x : [QueueItem] = []
+        for song in songsList {
+            x.append(QueueItem(loc: .disk, url: song.assetURL!, mediaInfo:
+                                SALockScreenInfo(title: song.title ?? "",
+                                                 artist: song.artist ?? "" ,
+                                                 artwork: song.artwork,
+                                                 releaseDate: UTC(song.releaseDate?.timeIntervalSince1970 ?? .zero),
+                                                 albumTitle: song.albumTitle ?? ""),
+                               mediaItem: song
+                              ))
+        }
+        self.musicList.list = x
+        let song = songsList[0]
+        // for test
+        downloadList.list.append(QueueItem(loc: .disk, url: song.assetURL!, mediaInfo:
+                                        SALockScreenInfo(title: song.title ?? "",
+                                                         artist: song.artist ?? "" ,
+                                                         artwork: song.artwork,
+                                                         releaseDate: UTC(song.releaseDate?.timeIntervalSince1970 ?? .zero),
+                                                         albumTitle: song.albumTitle ?? ""),
+                                       mediaItem: song
+                                      ))
         
     }
 }

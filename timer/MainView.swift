@@ -34,11 +34,12 @@ struct MainView: View {
     @State var searchContent = "花海"
     @State var isEditing = false
     @StateObject var player : AVEnginePlayerModel
-    @StateObject var musicItemConroller: MusicItemPlayerController
+    @StateObject var musicItemController: MusicItemPlayerController
     
     @State var showPlsyDetail = false
     @StateObject var scrollViewOffsetValue = ScrollOffsetModel()
 //    @State var listOffset: CGFloat = 0
+    @State var testProgress: Double = 0
     var body: some View {
         
         GeometryReader { geometry in
@@ -53,7 +54,7 @@ struct MainView: View {
                                     NavigationLink(
                                         destination: Text("LargePageView"),
                                         label: {
-                                            LargePageView(musicItem: musicItemConroller).frame(width:  380, height: 160)
+                                            LargePageView(musicItem: musicItemController).frame(width:  380, height: 160)
                                             //                                            .aspectRatio(2 / 2, contentMode: .fill)
                                             //                                            .listRowInsets(EdgeInsets())
                                         })
@@ -83,13 +84,13 @@ struct MainView: View {
                                     VStack(alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/, spacing: nil, content: {
                                         // foot music
                                         if selectedTab == .music {
-                                            MusicFootView(musicItemConroller: musicItemConroller, player: player)
+                                            MusicFootView(musicItemConroller: musicItemController, player: player)
                                                 .contentShape(Rectangle())
                                                 .onTapGesture {
                                                     self.showPlsyDetail = true
-                                                    if self.player.isPlaying {
-                                                        self.player.connectVolumeTap()
-                                                    }
+//                                                    if self.player.isPlaying {
+//                                                        self.player.connectVolumeTap()
+//                                                    }
                                                     //                                    print("all tap")
                                                 }
                                                 .fullScreenCover(isPresented: $showPlsyDetail, onDismiss: nil) {
@@ -119,8 +120,15 @@ struct MainView: View {
                                 Label("timer", systemImage: "timer")
                             }
                             .tag(Page.timer)
-                        
-                        TimerCollectionView(timer: _timer, timerTasks: _timerTasks)
+                      
+                VStack {
+                AccountView(progressBinding: $testProgress, progressShow: testProgress, f: {x in
+                    print("x:\(x)")
+                })
+                    Button(action: {
+                        $testProgress.wrappedValue = 0.5
+                    }, label: Text("button"))
+                }
                             .tabItem {
                                 Label("account", systemImage: "person.fill.viewfinder")
                             }
@@ -143,7 +151,7 @@ struct MainView: View {
 //            List {
 //            // 歌曲列表
             NavigationLink(destination:
-                            SongListView(musicItemController: musicItemConroller, player: player, scrollViewOffset: scrollViewOffsetValue)
+                            SongListView(musicItemController: musicItemController, player: player, scrollViewOffset: scrollViewOffsetValue)
             ) {
                 HStack(alignment: .center, spacing: /*@START_MENU_TOKEN@*/nil/*@END_MENU_TOKEN@*/, content: {
                     Image(systemName: "music.note")
@@ -192,6 +200,31 @@ struct MainView: View {
             .stroke(lineWidth: 0.3)
             .opacity(0.5)
             
+            
+            NavigationLink(destination: EmptyView()) {
+                EmptyView()
+            }
+
+            NavigationLink(destination:
+                            DownloadListView(player: player, musicItemController: musicItemController)
+            ) {
+                HStack(alignment: .center, spacing: /*@START_MENU_TOKEN@*/nil/*@END_MENU_TOKEN@*/, content: {
+                    Image(systemName: "arrow.down.app")
+                        .frame(width: 40, height: 30, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
+                    Text("下载列表")
+                    Spacer()
+                })
+                .animation(.none)
+                .font(.title3)
+                .foregroundColor(.red)
+            }
+            .labelsHidden()
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: 0))
+                path.addLine(to: CGPoint(x: 380, y: 0))
+            }
+            .stroke(lineWidth: 0.3)
+            .opacity(0.5)
 //            }
             
         })
@@ -313,7 +346,7 @@ struct ContentView_Previews: PreviewProvider {
     static let player = AVEnginePlayerModel(musicController)
     static var previews: some View {
         //        ContentView(timer: t).environmentObject(t)
-        MainView(player: player, musicItemConroller: musicController).environmentObject(t).environmentObject(tc)
+        MainView(player: player, musicItemController: musicController).environmentObject(t).environmentObject(tc)
     }
 }
 

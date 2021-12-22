@@ -184,6 +184,7 @@ class AudioEngine: AudioEngineProtocol {
     func updateIsPlaying() {
         if !bufferedSeconds.isPlayable {
             if bufferedSeconds.reachedEndOfAudio(needle: needle) {
+                print("updateIsPlaying reachedEndOfAudio")
                 playingStatus = .ended
             } else {
                 playingStatus = .buffering
@@ -193,7 +194,6 @@ class AudioEngine: AudioEngineProtocol {
         
         let isPlaying = engine.isRunning && playerNode.isPlaying
         playingStatus = isPlaying ? .playing : .paused
-        
 //        playingStatus = .paused
     }
     

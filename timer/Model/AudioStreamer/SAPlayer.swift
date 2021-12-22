@@ -129,7 +129,7 @@ public class SAPlayer {
     /**
      Corresponding to the skipping forward button on the media player on the lockscreen. Default is set to 30 seconds.
      */
-    public var skipForwardSeconds: Double = 30 {
+    public var skipForwardSeconds: Double = 15 {
         didSet {
             presenter.handleScrubbingIntervalsChanged()
         }
@@ -273,7 +273,12 @@ public class SAPlayer {
         let minutes = Int((timestamp - Double(hours * 60 * 60)) / 60)
         let secondsLeft = Int(timestamp - Double(hours * 60 * 60) - Double(minutes * 60))
         
-        return "\(hours):\(String(format: "%02d", minutes)):\(String(format: "%02d", secondsLeft))"
+        if hours == 0 {
+            return "\(String(format: "%02d", minutes)):\(String(format: "%02d", secondsLeft))"
+        } else {
+            return "\(hours):\(String(format: "%02d", minutes)):\(String(format: "%02d", secondsLeft))"
+        }
+        
     }
     
     func getUrl(forKey key: Key) -> URL? {
@@ -408,9 +413,8 @@ extension SAPlayer {
         // Therefore, instantiate new player every time, destroy any existing ones.
         // This prevents a crash where an owning engine already exists.
         presenter.handleClear()
-        
-        presenter.handlePlaySavedAudio(withSavedUrl: url)
         self.mediaInfo = mediaInfo
+        presenter.handlePlaySavedAudio(withSavedUrl: url)
     }
     
     /**
@@ -486,6 +490,10 @@ extension SAPlayer {
     public func clear() {
         presenter.handleClear()
     }
+    
+    public func nextAudio() {
+        presenter.playNextAudio()
+    }
 }
 
 
@@ -529,8 +537,13 @@ extension SAPlayer: SAPlayerDelegate {
         player?.pause()
     }
     
+    func shouldPlayImmediatelyF() {
+        self.presenter.shouldPlayImmediately = true
+    }
+    
     func seekEngine(toNeedle needle: Needle) {
         var seekToNeedle = needle < 0 ? 0 : needle
+        // needle > duration ? duration : needle
         seekToNeedle = needle > Needle(duration ?? 0) ? Needle(duration ?? 0) : needle
         player?.seek(toNeedle: seekToNeedle)
     }

@@ -177,6 +177,7 @@ class AudioStreamEngine: AudioEngine {
     }
     
     private func repeatedUpdates() {
+        // poll buffer and SchudaSegmentPCM
         self.pollForNextBuffer()
         self.updateNetworkBufferRange() // thread issues if I try to update buffer status in streaming listener
         self.updateNeedle()

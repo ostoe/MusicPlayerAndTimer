@@ -45,6 +45,13 @@ class AudioClockDirector {
         bufferClosures.clear()
     }
     
+    func clearAllTypeCache() {
+        needleClosures.clearAllCache()
+        durationClosures.clearAllCache()
+        playingStatusClosures.clearAllCache()
+        bufferClosures.clearAllCache()
+    }
+    
     // MARK: - Attaches
     
     

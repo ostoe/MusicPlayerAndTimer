@@ -28,9 +28,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let timerTask = CTimerTask()
         let timer = TimerData(0, 0, 2, timerTask)
-        let musicController = MusicItemPlayerController()
-        let player = AVEnginePlayerModel(musicController)
-        let contentView = MainView(player: player, musicItemConroller: musicController).environment(\.managedObjectContext, context).environmentObject(timer).environmentObject(timerTask)
+//        let musicController = MusicItemPlayerController.shared
+        let player = AVEnginePlayerModel(MusicItemPlayerController.shared)
+        let contentView = MainView(player: player, musicItemController: MusicItemPlayerController.shared).environment(\.managedObjectContext, context).environmentObject(timer).environmentObject(timerTask)
 
         // Use a UIHostingController as window root view controller.
         if let windowScene = scene as? UIWindowScene {

@@ -47,7 +47,7 @@ struct CustomVolumeView: UIViewRepresentable {
         }
         
         @objc func updateVolume(sender: UISlider) {
-                    print(#function)
+//                    print(#function)
 //            print("sender: \(sender.value)")
                     parent.volume = sender.value
 //                    print(parent.volume)

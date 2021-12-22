@@ -15,8 +15,8 @@ struct MusicFootView: View {
 
         HStack(alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/, spacing: 0, content: {
             
-            if musicItemConroller.currentPlay?.artwork != nil {
-                Image(uiImage: (musicItemConroller.currentPlay?.artwork!.image(at: CGSize(width: 40, height: 40)))! )
+            if let artwork = musicItemConroller.currentPlay?.mediaInfo?.artwork {
+                Image(uiImage: (artwork.image(at: CGSize(width: 40, height: 40)))! )
                     .resizable()
                     //                                    .scaleEffect(19)
                     .frame(width: 40, height: 40, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
@@ -36,13 +36,13 @@ struct MusicFootView: View {
             }
             
             
-            Text(musicItemConroller.currentPlay?.title ?? "未播放")
+            Text(musicItemConroller.currentPlay?.mediaInfo?.title ?? "未播放")
                 .lineLimit(1)
                 .font(.custom("title", size: 17))
                 .foregroundColor(.black)
 //            musicItemConroller.currentPlay?.artist.co
-            if musicItemConroller.currentPlay?.artist != nil {
-                Text(" - \(musicItemConroller.currentPlay?.artist ?? "")")
+            if let artist = musicItemConroller.currentPlay?.mediaInfo?.artist {
+                Text(" - \(artist)")
                     .lineLimit(1)
                     .foregroundColor(.black)
                     .font(.custom("aritist", size: 13))

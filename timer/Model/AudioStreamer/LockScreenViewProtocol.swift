@@ -67,9 +67,10 @@ extension LockScreenViewProtocol {
         nowPlayingInfo[MPMediaItemPropertyReleaseDate] = Date(timeIntervalSince1970: TimeInterval(releaseDate))
 
         if let artwork = info.artwork {
+            let image = artwork.image(at: CGSize(width: 20, height: 20))!
             nowPlayingInfo[MPMediaItemPropertyArtwork] =
-            MPMediaItemArtwork(boundsSize: artwork.size) { size in
-                return artwork
+            MPMediaItemArtwork(boundsSize: image.size) { size in
+                return image
             }
         } else {
             nowPlayingInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: UIImage().size) { size in

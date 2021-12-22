@@ -30,7 +30,7 @@ struct SongListView: View {
             ScrollViewReader { proxy in
                 ZStack {
                     LazyVStack {
-                        ForEach(0..<musicItemController.musicList.count, id: \.self) { i in
+                        ForEach(0..<musicItemController.musicList.list.count, id: \.self) { i in
                             lineContenView(musicItemController: musicItemController, player: player, i: i)
                                 .padding([.leading, .trailing], 8)
                                 .padding([.top], 3)
@@ -98,8 +98,8 @@ struct lineContenView: View {
             if  musicItemController.currentIndex == i {
                 Image(systemName: player.isPlaying ? "pause":"play")
             }
-            if musicItemController.musicList[i].artwork != nil {
-                Image(uiImage: (musicItemController.musicList[i].artwork!.image(at: CGSize(width: 40, height: 40)))! )
+            if let artwork = musicItemController.musicList.list[i].mediaInfo?.artwork {
+                Image(uiImage: (artwork.image(at: CGSize(width: 40, height: 40)))! )
                     .resizable()
                     .frame(width: 50, height: 50, alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/)
             } else {
@@ -109,22 +109,23 @@ struct lineContenView: View {
             }
             
             VStack(alignment: .leading, spacing: /*@START_MENU_TOKEN@*/nil/*@END_MENU_TOKEN@*/, content: {
-                Text(musicItemController.musicList[i].title!)
+                Text(musicItemController.musicList.list[i].mediaInfo?.title ?? "")
                     .font(.custom("title", size: 17))
                     .lineLimit(1)
                 HStack(alignment: /*@START_MENU_TOKEN@*/.center/*@END_MENU_TOKEN@*/, spacing: 2, content: {
                     Image(systemName: "heart.fill")
-                    Text(musicItemController.musicList[i].artist!)
+                    Text(musicItemController.musicList.list[i].mediaInfo?.artist ?? "")
                         .font(.custom("title", size: 13))
                         .lineLimit(1)
                         .foregroundColor(.gray)
-                    Text(musicItemController.musicList[i].albumTitle!)
+                    Text(musicItemController.musicList.list[i].mediaInfo?.albumTitle ?? "")
                         .font(.custom("title", size: 13))
                         .foregroundColor(.gray)
                         .lineLimit(1)
                 })
                 
             })
+            
             Spacer()
             // line list ellipsis.circle
             Image(systemName: "ellipsis")

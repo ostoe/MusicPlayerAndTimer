@@ -34,6 +34,7 @@ class SAPlayerPresenter {
         var mediaInfo: SALockScreenInfo?
         var bitrate: SAPlayerBitrate
         
+        
         init(loc: Location, url: URL, mediaInfo: SALockScreenInfo?, bitrate: SAPlayerBitrate = .high) {
             self.loc = loc
             self.url = url
@@ -50,11 +51,13 @@ class SAPlayerPresenter {
     weak var delegate: SAPlayerDelegate?
     var shouldPlayImmediately = false //for auto-play
     
+    var isSwitchToNext = false
+    
     var needle: Needle?
     var duration: Duration?
     
     private var key: String?
-    private var isPlaying: SAPlayingStatus = .buffering
+    private var isPlaying: SAPlayingStatus = .paused
     
     private var urlKeyMap: [Key: URL] = [:]
     
@@ -79,7 +82,7 @@ class SAPlayerPresenter {
     
     func handleClear() {
         delegate?.clearEngine()
-        
+//        isPlaying = .paused
         needle = nil
         duration = nil
         key = nil
@@ -114,7 +117,7 @@ class SAPlayerPresenter {
         
         self.key = url.key
         urlKeyMap[url.key] = url
-        
+                                                                                    // 这里的duration 由duration didset 调用
         durationRef = AudioClockDirector.shared.attachToChangesInDuration(closure: { [weak self] (key, duration) in
             guard let self = self else { throw DirectorError.closureIsDead }
             guard key == self.key else {
@@ -145,8 +148,12 @@ class SAPlayerPresenter {
                 Log.debug("misfire expected key: \(self.key ?? "none") payload key: \(key)")
                 return
             }
-            
+            // switch stage state: playing???  to  .paused
             self.isPlaying = isPlaying
+//            if self.isSwitchToNext && self.isPlaying == .ended {
+//                self.isPlaying = .paused
+//                self.isSwitchToNext = false
+//            }
             
             if(self.isPlaying == .paused && self.shouldPlayImmediately) {
                 self.shouldPlayImmediately = false
@@ -154,12 +161,16 @@ class SAPlayerPresenter {
             }
             
             if(self.isPlaying == .ended) {
-                self.playNextAudioIfExists()
+                print("player ended")
+//                self.isSwitchToNext = true
+//                self.playNextAudioIfExists()
+                self.playNextAudio()
             }
         })
     }
     
     private func detachFromUpdates() {
+        AudioClockDirector.shared.clearAllTypeCache()
         AudioClockDirector.shared.detachFromChangesInDuration(withID: durationRef)
         AudioClockDirector.shared.detachFromChangesInNeedle(withID: needleRef)
         AudioClockDirector.shared.detachFromChangesInPlayingStatus(withID: playingStatusRef)
@@ -237,6 +248,7 @@ extension SAPlayerPresenter {
             Log.info("no queued audio")
             return
         }
+        
         let nextAudioURL = audioQueue.removeFirst()
         let key = nextAudioURL.url.key
         
@@ -249,7 +261,7 @@ extension SAPlayerPresenter {
         delegate?.mediaInfo = nextAudioURL.mediaInfo
         
         // We need to give a second to clean up the previous engine properly. Deinit takes some time.
-        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] (_) in
+        Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] (_) in
             guard let self = self else { return }
             
             switch nextAudioURL.loc {
@@ -258,6 +270,36 @@ extension SAPlayerPresenter {
                 break
             case .disk:
                 self.handlePlaySavedAudio(withSavedUrl: nextAudioURL.url)
+            }
+            
+            self.shouldPlayImmediately = true
+        }
+    }
+    
+    func playNextAudio() {
+        Log.info("looking foor next audio in queue to play")
+        
+        guard let  song = MusicItemPlayerController.shared.nextItem() else { return }
+        Log.info("getting ready to play \(song.url.absoluteString)")
+        
+//        AudioQueueDirector.shared.changeInQueue(song.url.key, url: song.url)
+        
+        handleClear()
+        
+        delegate?.mediaInfo = song.mediaInfo
+        
+        // We need to give a second to clean up the previous engine properly. Deinit takes some time.
+        Timer.scheduledTimer(withTimeInterval: 0, repeats: false) { [weak self] (_) in
+            guard let self = self else { return }
+            
+            switch song.loc {
+            case .remote:
+                self.handlePlayStreamedAudio(withRemoteUrl: song.url, bitrate: song.bitrate)
+                break
+            case .disk:
+                self.handlePlaySavedAudio(withSavedUrl: song.url)
+            case .cache:
+                break
             }
             
             self.shouldPlayImmediately = true

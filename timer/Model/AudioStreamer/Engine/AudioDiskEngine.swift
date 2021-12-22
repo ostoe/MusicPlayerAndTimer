@@ -72,7 +72,8 @@ class AudioDiskEngine: AudioEngine {
         doRepeatedly(timeInterval: 0.2) { [weak self] in
             guard let self = self else { return }
             guard self.playingStatus != .ended else { return }
-            
+            // 0.2秒执行一次，循环。
+            // 里面更新了playingStatus，查看playingStatus的didSet
             self.updateIsPlaying()
             self.updateNeedle()
         }
